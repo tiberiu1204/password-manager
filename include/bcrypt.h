@@ -7,12 +7,16 @@
 
 class Bcrypt {
 public:
-    std::vector<uint8_t> hash(std::vector<uint8_t>&, const std::vector<uint8_t>&, uint8_t, uint8_t);
+    std::string hash(std::string &password, const std::string &salt, uint8_t cost, uint8_t iterations);
 private:
     uint32_t blowfish_f(uint32_t);
     uint64_t blowfish_encrypt(uint64_t);
-    void expand_key(const std::vector<uint8_t>&, const std::vector<uint8_t>&);
-    void eks_blowfish_setup(const std::vector<uint8_t>&, const std::vector<uint8_t>&, uint8_t);
+    std::string blowfish_encrypt_ecb(const std::string&);
+    void expand_key(const std::string&, const std::string&);
+    void eks_blowfish_setup(const std::string&, const std::string&, uint8_t);
+    std::string base64_encode(const std::string&);
+
+    const std::string base64_table = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     uint32_t P[18] = { 0x243f6a88, 0x85a308d3, 0x13198a2e, 0x03707344, 0xa4093822,
                              0x299f31d0, 0x082efa98, 0xec4e6c89, 0x452821e6, 0x38d01377,
                              0xbe5466cf, 0x34e90c6c, 0xc0ac29b7, 0xc97c50dd, 0x3f84d5b5,
