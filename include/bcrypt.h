@@ -8,7 +8,7 @@
 class Bcrypt {
 public:
     std::string hash(std::string &password, const std::string &salt, uint8_t cost);
-    static std::vector<uint8_t> extract_salt(const std::string &bcrypt_hash);
+    static std::string extract_salt(const std::string &bcrypt_hash);
 private:
     uint32_t blowfish_f(uint32_t);
     uint64_t blowfish_encrypt(uint64_t);

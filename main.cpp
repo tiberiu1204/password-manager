@@ -15,5 +15,12 @@ int main() {
     std::cout<<"\n";
     std::string password = "deffnotapassword";
 
-    std::cout<<bc.hash(password, salt, 12);
+    std::string hash = bc.hash(password, salt, 12);
+
+    //std::cout<<Bcrypt::extract_salt(hash)<<"\n"<<salt;
+    std::cout<<"Insert password:";
+    std::cin>>password;
+    std::string hash2 = Bcrypt().hash(password, Bcrypt::extract_salt(hash), 12);
+    if(hash2== hash) std::cout<<"Correct.\n";
+    else std::cout<<"Incorrect.";
 }

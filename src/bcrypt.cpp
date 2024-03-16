@@ -3,13 +3,13 @@
 
 // TODO: Error handling (check for parameter size, etc.) and finish hash function
 
-std::vector<uint8_t> Bcrypt::extract_salt(const std::string &bcrypt_hash) {
+std::string Bcrypt::extract_salt(const std::string &bcrypt_hash) {
     const std::string base64_table = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     std::unordered_map<char, int> index_map;
     for(int i = 0; i < base64_table.size(); i++) {
         index_map[base64_table[i]] = i;
     }
-    std::vector<uint8_t> salt(16, 0);
+    std::string salt(16, 0);
     size_t h_index = 7;
     size_t bit_index = 0;
     for(size_t i = 0; i < 16; i++) {
@@ -21,7 +21,7 @@ std::vector<uint8_t> Bcrypt::extract_salt(const std::string &bcrypt_hash) {
                 h_index++;
             }
         }
-        salt[i] = byte;
+        salt[i] = static_cast<char>(byte);
     }
     return salt;
 }
