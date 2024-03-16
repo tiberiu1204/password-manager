@@ -10,9 +10,10 @@ int main() {
     std::string salt(16, 0);
     for(int i = 0; i < 16; i++) {
         salt[i] = static_cast<char>(dist(rng));
+        //std::cout<<static_cast<int16_t>(salt[i])<<", ";
     }
+    std::cout<<"\n";
     std::string password = "cacamaca2leivaca";
-
     // TODO: fix
 
     std::cout<<bc.hash(password, salt, 12, 12);

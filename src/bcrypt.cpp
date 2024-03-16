@@ -7,7 +7,7 @@ std::string Bcrypt::base64_encode(const std::string &byte_arr) {
     size_t index = 0;
     uint8_t bit_index = 0;
     std::string result;
-    while(index < byte_arr.size()) {
+    while(index < byte_arr.size() && index < 23) {
         if(bit_index <= 2) {
             result += this->base64_table[byte_arr.at(index) >> (2 - bit_index) & 0b111111];
             bit_index += 6;
@@ -19,10 +19,13 @@ std::string Bcrypt::base64_encode(const std::string &byte_arr) {
         else {
             uint8_t table_index = byte_arr.at(index) & ((1 << (8 - bit_index)) - 1);
             table_index <<= bit_index - 2;
-            table_index += byte_arr.at(index + 1) >> (10 - bit_index) & 0b111111;
+            if(index + 1 < byte_arr.size()) {
+
+                table_index += static_cast<uint8_t>(byte_arr.at(index + 1)) >> (10 - bit_index) & 0b111111;
+                bit_index -= 2;
+            }
+            result += this->base64_table.at(table_index);
             index++;
-            bit_index -= 2;
-            result += this->base64_table[table_index];
         }
     }
     return result;
@@ -47,24 +50,25 @@ uint64_t Bcrypt::blowfish_encrypt(uint64_t p_text) {
     return (static_cast<uint64_t>(left) << 32) + right;
 }
 
-std::string Bcrypt::blowfish_encrypt_ecb(const std::string& p_text) {
+    std::string Bcrypt::blowfish_encrypt_ecb(const std::string& p_text) {
     std::string c_text(p_text.size(), 0);
     size_t c_text_index = 0;
-    for(size_t i = 0; i < p_text.size(); i += 8) {
-        uint64_t block = 0;
-        for(size_t j = i; j < i + 8; j++) {
-            if(j == p_text.size()) {
-                block <<= (i + 8 - j) * 8;
-                break;
+    uint64_t block = 0;
+    for(size_t i = 0; i < p_text.size(); i++) {
+        block <<= 8;
+        block += p_text[i];
+        if(i % 8 == 7) {
+            block = this->blowfish_encrypt(block);
+            for(int j = 0; j < 8; j++) {
+                c_text.at(c_text_index++) = static_cast<char>(block >> (56 - 8 * j) & 0xff);
             }
-            else {
-                block <<= 8;
-                block += p_text.at(j);
-            }
+            block = 0;
         }
+    }
+    if(c_text_index < c_text.size()) {
         block = this->blowfish_encrypt(block);
-        for(int j = 0; j < 8; j++) {
-            c_text[c_text_index++] = static_cast<char>(block >> (56 - 8 * j) & 0xff);
+        while(c_text_index < c_text.size()) {
+            c_text.at(c_text_index++) = static_cast<char>(block >> ((c_text.size() - c_text_index - 1) * 8) & 0xff);
         }
     }
     return c_text;
@@ -109,12 +113,15 @@ void Bcrypt::eks_blowfish_setup(const std::string &password, const std::string &
 std::string Bcrypt::hash(std::string &password, const std::string &salt, uint8_t cost, uint8_t iterations) {
     this->eks_blowfish_setup(password, salt, cost);
 
-    std::string c_text = "OpenBSDbcrypthashfunc";
+    std::string c_text = "This24ByteTextWillBeHash";
     while(iterations--) {
         c_text = this->blowfish_encrypt_ecb(c_text);
     }
-    std::string result_hash = "$2t$" + std::to_string(cost) + "$" + this->base64_encode(salt) +
-            this->base64_encode(c_text);
+    std::string salt_64 = this->base64_encode(salt);
+    std::string c_text_64 = this->base64_encode(c_text);
+    /* std::cout<<"Salt: "<<salt_64<<" with "<<salt_64.size()<<" chars.\n";
+    std::cout<<"Hash: "<<c_text_64<<" with "<<c_text_64.size()<<" chars.\n";*/
+    std::string result_hash = "$2t$" + std::to_string(cost) + "$" + salt_64 + c_text_64;
     return result_hash;
 }
 
