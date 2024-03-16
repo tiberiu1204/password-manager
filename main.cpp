@@ -13,8 +13,8 @@ int main() {
         //std::cout<<static_cast<int16_t>(salt[i])<<", ";
     }
     std::cout<<"\n";
-    std::string password = "cacamaca2leivaca";
+    std::string password = "123456789123456789123456789123456789123456789123456789123456789123456789dkfja;ksldjf;asjdf;alksjdf;aksjldf";
     // TODO: fix
 
-    std::cout<<bc.hash(password, salt, 12, 12);
+    std::cout<<bc.hash(password, salt, 12);
 }

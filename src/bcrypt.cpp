@@ -102,17 +102,17 @@ void Bcrypt::expand_key(const std::string &password, const std::string &salt) {
 
 void Bcrypt::eks_blowfish_setup(const std::string &password, const std::string &salt, uint8_t cost) {
     this->expand_key(password, salt);
-    cost = 1 << cost;
+    uint32_t iterations = 1 << cost;
     std::string null_salt(16, 0);
-    while(cost--) {
+    while(iterations--) {
         this->expand_key(password, null_salt);
         this->expand_key(salt, null_salt);
     }
 }
 
-std::string Bcrypt::hash(std::string &password, const std::string &salt, uint8_t cost, uint8_t iterations) {
+std::string Bcrypt::hash(std::string &password, const std::string &salt, uint8_t cost) {
     this->eks_blowfish_setup(password, salt, cost);
-
+    uint32_t iterations = 1 << cost;
     std::string c_text = "This24ByteTextWillBeHash";
     while(iterations--) {
         c_text = this->blowfish_encrypt_ecb(c_text);
