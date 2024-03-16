@@ -3,6 +3,16 @@
 
 // TODO: Error handling (check for parameter size, etc.) and finish hash function
 
+uint8_t Bcrypt::extract_cost(const std::string &bcrypt_hash) {
+    uint8_t cost = 0;
+    size_t index = 4;
+    while(bcrypt_hash[index] != '$') {
+        cost *= 10;
+        cost += (bcrypt_hash[index++] - '0');
+    }
+    return cost;
+}
+
 std::string Bcrypt::extract_salt(const std::string &bcrypt_hash) {
     const std::string base64_table = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     std::unordered_map<char, int> index_map;
