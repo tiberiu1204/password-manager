@@ -1,15 +1,23 @@
 #include "program.h"
 #include <iostream>
 
-void Command::add_cmd(const std::string &cmd_name, Command::Cmd cmd_code) {
-    Command::commands[cmd_name] = cmd_code;
+std::unordered_map<std::string, std::unique_ptr<Command>> Command::commands;
+
+void Command::add_cmd(const std::string &cmd_name, std::unique_ptr<Command> cmd) {
+    Command::commands[cmd_name] = std::move(cmd);
+}
+
+Command *Command::get_cmd(const std::string &cmd_name) {
+    if(Command::commands.find(cmd_name) == Command::commands.end()) return nullptr;
+    return Command::commands[cmd_name].get();
 }
 
 void Program::load_commands() {
-    Command::add_cmd("quit", Command::QUIT);
-    Command::add_cmd("add user", Command::ADD_USER);
-    Command::add_cmd("delete user", Command::DELETE_USER);
-    Command::add_cmd("login", Command::LOGIN);
+    Command::add_cmd("quit", std::make_unique<CmdQuit>());
+    Command::add_cmd("add user", std::make_unique<CmdAddUser>());
+    Command::add_cmd("delete user", std::make_unique<CmdDeleteUser>());
+    Command::add_cmd("login", std::make_unique<CmdLogin>());
+    Command::add_cmd("help", std::make_unique<CmdHelp>());
 }
 
 int Program::start_program(const std::string &version) {
@@ -21,70 +29,74 @@ int Program::start_program(const std::string &version) {
     while(true) {
         std::cout<<">>> ";
         std::cin>>command;
-        Command cmd(command);
-        CmdStatusCode status_code = cmd.execute();
+        Command *cmd = Command::get_cmd(command);
+        if(!cmd) {
+            std::cout<<"Unknown command. Type 'help' to get a list of commands.\n";
+            continue;
+        }
+        CmdStatusCode status_code = cmd->execute();
         switch (status_code) {
             case SC_QUIT:
                 return 0;
-            case SC_UNKNOWN:
-                std::cout<<"Unknown command. Type 'help' to get a list of commands.";
-                break;
             default:
                 break;
         }
     }
 }
 
-Command::Command(const std::string &command) {
-    if(Command::commands.find(command) != Command::commands.end()) {
-        this->command = Command::commands[command];
-    }
-    else {
-        this->command = UNKNOWN;
-    }
+CmdStatusCode CmdQuit::execute() {
+    return SC_QUIT;
 }
 
-bool Command::validate_username(const std::string &username) {
-    return username.size() <= 32 && username.size() >= 6;
+void CmdQuit::display_help() {
+    std::cout<<"quit\n";
+    std::cout<<"DESCRIPTION:\n";
+    std::cout<<"Exits the program.\n\n";
 }
 
-bool Command::validate_password(const std::string &password) {
-    return password.size() >= 6 && password.size() <= 72;
+CmdStatusCode CmdAddUser::execute() {
+    return SC_QUIT;
 }
 
-bool Command::add_user() {
-    std::string username;
-    std::string password;
-    std::cout<<"Username: ";
-    std::cin>>username;
-    if(!Command::validate_username(username)) {
-        return false;
+void CmdAddUser::display_help() {
+    std::cout<<"add user\n";
+    std::cout<<"DESCRIPTION:\n";
+    std::cout<<"Prompts the user to insert a username and a password for a new user.\n\n";
+}
+
+CmdStatusCode CmdDeleteUser::execute() {
+    return SC_QUIT;
+}
+
+void CmdDeleteUser::display_help() {
+    std::cout<<"delete user\n";
+    std::cout<<"DESCRIPTION:\n";
+    std::cout<<"Prompts the user to insert a username and it's corresponding password in order to delete the user"
+               "and all its stored information.\n\n";
+}
+
+CmdStatusCode CmdHelp::execute() {
+    std::cout<<"Displaying list of commands.\n\n";
+    for(const auto &cmd_pair : Command::commands) {
+        cmd_pair.second->display_help();
     }
-    std::cout<<"\n";
-    std::cout<<"Password: ";
-    std::cin>>password;
-    if(!Command::validate_password(password)) {
-        return false;
-    }
-
-    return true;
+    return SC_SUCCESS;
 }
 
-CmdStatusCode Command::execute() {
-    bool success = false;
-    switch (this->command) {
-        case QUIT:
-            return SC_QUIT;
-        case ADD_USER:
-            try {
-                success = Command::add_user();
-            }
-            catch (const std::exception &e) {
-                return SC_ERROR;
-            }
-        default:
-            return SC_UNKNOWN;
-    }
-    if(success) return SC_SUCCESS;
-    return SC_FAIL;
+void CmdHelp::display_help() {
+    std::cout<<"help\n";
+    std::cout<<"DESCRIPTION:\n";
+    std::cout<<"Displays a complete list of commands and their descriptions.\n\n";
 }
+
+CmdStatusCode CmdLogin::execute() {
+    return SC_QUIT;
+}
+
+void CmdLogin::display_help() {
+    std::cout<<"login\n";
+    std::cout<<"DESCRIPTION:\n";
+    std::cout<<"Prompts the user to insert a username and a password in order to login into the account.\n\n";
+}
+
+
