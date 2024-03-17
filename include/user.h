@@ -8,11 +8,12 @@
 class User {
 public:
     User() = default;
+    static void add_user(const User &);
     bool validate_password(std::string &password);
     void decrypt_data(const std::string &key);
 private:
     uint64_t user_id;
-    std::string user_name;
+    std::string username;
     const std::string password_hash;
     UserData data;
 };
