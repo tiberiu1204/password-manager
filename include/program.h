@@ -5,6 +5,9 @@
 #include <unordered_map>
 #include <memory>
 
+constexpr const char* DATA_DIR = "data";
+constexpr const char* DATA_FILE_NAME = "data.db3";
+
 enum CmdStatusCode {
     SC_SUCCESS,
     SC_FAIL,
@@ -17,6 +20,8 @@ private:
     static void load_commands();
 public:
     static int start_program(const std::string &version);
+    static void init_files();
+    static void init_db();
 };
 
 class Command {

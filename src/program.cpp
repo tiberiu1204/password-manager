@@ -1,5 +1,7 @@
 #include "program.h"
 #include <iostream>
+#include <filesystem>
+#include "SQLiteCpp.h"
 
 std::unordered_map<std::string, std::unique_ptr<Command>> Command::commands;
 
@@ -20,8 +22,29 @@ void Program::load_commands() {
     Command::add_cmd("help", std::make_unique<CmdHelp>());
 }
 
+void Program::init_db() {
+    namespace fs = std::filesystem;
+    SQLite::Database db((fs::current_path() /= DATA_DIR) /= DATA_FILE_NAME,
+                        SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+  db.exec("CREATE TABLE Persons (\n"
+            "PersonID int,"
+            "LastName varchar(255),"
+            "FirstName varchar(255),"
+            "Address varchar(255),"
+            "City varchar(255));");
+}
+
+void Program::init_files() {
+    namespace fs = std::filesystem;
+    fs::create_directory(fs::current_path() /= DATA_DIR);
+    if (!(fs::exists((fs::current_path() /= DATA_DIR) /= DATA_FILE_NAME))) {
+        Program::init_db();
+    }
+}
+
 int Program::start_program(const std::string &version) {
     Program::load_commands();
+    Program::init_files();
 
     std::cout<<"Secure(ish) password manager shell version '"<<version<<"'. Created and maintained by Tiberiu Popescu.\n";
     std::cout<<"Type 'help' to get a list of commands. Type 'quit' to exit the program.\n\n";
