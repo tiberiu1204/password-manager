@@ -6,7 +6,7 @@
 #include <memory>
 
 constexpr const char* DATA_DIR = "data";
-constexpr const char* DATA_FILE_NAME = "data.db3";
+constexpr const char* USERS_DB_FILE_NAME = "users.db3";
 
 enum CmdStatusCode {
     SC_SUCCESS,
@@ -45,6 +45,9 @@ class CmdAddUser : public Command {
 public:
     CmdStatusCode execute() override;
     void display_help() override;
+private:
+    static bool validate_username(const std::string&);
+    static bool validate_password(const std::string&);
 };
 class CmdDeleteUser : public Command {
 public:
