@@ -1,7 +1,19 @@
 #include "bcrypt.h"
 #include <unordered_map>
+#include <random>
 
-// TODO: Error handling (check for parameter size, etc.) and finish hash function
+std::string Bcrypt::generate_salt() {
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> dist(0,255);
+    std::string salt(16, 0);
+
+    for(int i = 0; i < 16; i++) {
+        salt[i] = static_cast<char>(dist(rng));
+    }
+
+    return salt;
+}
 
 uint8_t Bcrypt::extract_cost(const std::string &bcrypt_hash) {
     uint8_t cost = 0;
