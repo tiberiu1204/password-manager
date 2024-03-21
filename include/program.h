@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include "SQLiteCpp.h"
 
 constexpr const char* DATA_DIR = "data";
 constexpr const char* USERS_DB_FILE_NAME = "users.db3";
