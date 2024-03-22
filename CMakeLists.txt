@@ -15,6 +15,8 @@ add_executable(password_manager main.cpp
         include/program.h
         include/commands.h
         src/commands.cpp
+        include/data_encryption.h
+        src/data_encryption.cpp
 )
 
 target_link_libraries(password_manager SQLiteCpp)
