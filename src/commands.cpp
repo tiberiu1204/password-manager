@@ -75,6 +75,23 @@ bool CmdAddUser::validate_username(const std::string& username) {
         std::cout<<"[ERROR] Username can be at most 63 characters long!\n";
         valid = false;
     }
+    if(username.size() < 6) {
+        valid = false;
+        std::cout<<"[ERROR] Username must be at least 6 characters long.\n";
+    }
+    if(username.find(' ') != std::string::npos) {
+        std::cout<<"[ERROR] Username must not contain spaces!\n";
+        valid = false;
+    }
+    SQLite::Database db((std::filesystem::current_path() /= DATA_DIR) /= USERS_DB_FILE_NAME,
+                        SQLite::OPEN_CREATE | SQLite::OPEN_READWRITE);
+    try {
+        if(db.execAndGet("select username from users where username = '" + username + "'").size() != 0) {
+            valid = false;
+            std::cout<<"[ERROR] Username already exists.\n";
+        }
+    }
+    catch(std::exception &e) {}
     return valid;
 }
 
