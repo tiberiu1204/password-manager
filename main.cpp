@@ -2,6 +2,6 @@
 #include "data_encryption.h"
 #include <iostream>
 int main() {
-    std::cout<<static_cast<uint16_t>(AES::ffield_mult(0x57, 0x13));
+    std::cout<<AES::word_prod(0x03010102, 0x0b0d090e);
     //return Program::start_program("dev");
 }

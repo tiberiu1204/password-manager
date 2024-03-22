@@ -22,6 +22,7 @@ public:
     void sub_word();
     static uint8_t xtime(uint8_t, uint8_t);
     static uint8_t ffield_mult(uint8_t, uint8_t);
+    static uint32_t word_prod(uint32_t, uint32_t);
 };
 
 #endif //PASSWORD_MANAGER_DATA_ENCRYPTION_H
