@@ -19,7 +19,7 @@ private:
 
 class UserData {
 public:
-    UserData() = default;
+    explicit UserData(uint64_t user_id);
     void load_data();
     DataEntry at(size_t index);
     void insert(const DataEntry &data);

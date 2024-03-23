@@ -8,8 +8,6 @@
 #include <chrono>
 #include "bcrypt.h"
 
-extern constexpr const char* DATA_DIR = "data";
-extern constexpr const char* USERS_DB_FILE_NAME = "users.db3";
 constexpr const uint8_t BCRYPT_COST = 12;
 
 std::unordered_map<std::string, std::unique_ptr<Command>> Command::commands;
@@ -152,13 +150,77 @@ void CmdHelp::display_help() {
 }
 
 Command::CmdStatusCode CmdLogin::execute() {
-    return SC_QUIT;
+    if(Program::user_logged_in()) {
+        std::cout<<"[ERROR] Another user already logged in. You must logout before logging into another user.\n\n";
+        return SC_FAIL;
+    }
+    std::cout<<"\nYou will be prompted to insert a username and a password for your account. "
+               "Type '!abort' if you want to cancel the process at any time.\n\n";
+    SQLite::Database db((std::filesystem::current_path() /= DATA_DIR) /= USERS_DB_FILE_NAME);
+    while(true) {
+        std::string username;
+        std::string password;
+
+        std::cout << "Username: ";
+        std::getline(std::cin, username);
+        if (username == "!abort") {
+            std::cout << "\n";
+            return SC_FAIL;
+        }
+
+        std::cout << "Password: ";
+        char input_ch;
+        while (true) {
+            input_ch = static_cast<char>(getch());
+            if (input_ch == 8) {
+                if (!password.empty()) password.pop_back();
+            } else if (input_ch < 32) {
+                break;
+            } else {
+                password.push_back(input_ch);
+            }
+        }
+        if (password == "!abort") {
+            std::cout << "\n";
+            return SC_FAIL;
+        }
+
+
+        const std::string query_body = "select user_id, username, password_hash, date_created from users "
+                                  "where username = '" + username + "';";
+        SQLite::Statement query(db, query_body);
+        try {
+            query.executeStep();
+        }
+        catch(std::exception &e) {
+            std::cout<<"\n[ERROR] Wrong username or password. Try again.\n\n";
+            continue;
+        }
+
+        uint64_t q_user_id = static_cast<uint64_t>(query.getColumn(0).getInt64());
+        std::string q_username = query.getColumn(1);
+        std::string q_password_hash = query.getColumn(2);
+        std::string q_date_created = query.getColumn(3);
+
+        std::string password_hash = Bcrypt().hash(password, Bcrypt::extract_salt(q_password_hash), BCRYPT_COST);
+
+        if(q_username == username && q_password_hash == password_hash) {
+            User *user = new User(q_user_id, username);
+            user->retrieve_data();
+            Program::set_logged_user(user);
+            return SC_SUCCESS;
+        }
+        else {
+            std::cout<<"\n[ERROR] Wrong username or password. Try again.\n\n";
+        }
+    }
 }
 
 void CmdLogin::display_help() {
     std::cout<<"login\n";
     std::cout<<"DESCRIPTION:\n";
-    std::cout<<"Prompts the user to insert a username and a password in order to login into the account.\n\n";
+    std::cout<<"Prompts the user to insert a username and a password in order to login into the account. "
+               "You must logout before you can login to another user.\n\n";
 }
 
 void Command::add_cmd(const std::string &cmd_name, std::unique_ptr<Command> cmd) {

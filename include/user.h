@@ -7,14 +7,11 @@
 
 class User {
 public:
-    User() = default;
-    static void add_user(const User &);
-    bool validate_password(std::string &password);
-    void decrypt_data(const std::string &key);
+    User(uint64_t user_id, std::string username);
+    void retrieve_data();
 private:
-    uint64_t user_id;
+    const uint64_t user_id;
     std::string username;
-    const std::string password_hash;
     UserData data;
 };
 

@@ -1,12 +1,11 @@
 #include "user.h"
+
+#include <utility>
 #include "bcrypt.h"
 
-void User::add_user(const User &user) {
+User::User(uint64_t user_id, std::string username) :
+user_id(user_id), username(std::move(username)), data(UserData(user_id)) {}
 
-}
+void User::retrieve_data() {
 
-bool User::validate_password(std::string &password) {
-    const std::string salt = Bcrypt::extract_salt(this->password_hash);
-    const uint8_t cost = Bcrypt::extract_cost(this->password_hash);
-    return this->password_hash == Bcrypt().hash(password, salt, cost);
 }

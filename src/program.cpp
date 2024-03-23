@@ -10,6 +10,17 @@ constexpr const char* INIT_DB_QUERY = "create table users "
                                       "password_hash varchar(64),"
                                       "date_created date);";
 
+std::unique_ptr<User> Program::logged_user = nullptr;
+
+void Program::set_logged_user(User *user) {
+    Program::logged_user.reset(user);
+}
+
+bool Program::user_logged_in() {
+    return !(Program::logged_user == nullptr);
+}
+
+
 void Program::load_commands() {
     Command::add_cmd("quit", std::make_unique<CmdQuit>());
     Command::add_cmd("add user", std::make_unique<CmdAddUser>());
@@ -45,7 +56,7 @@ int Program::start_program(const std::string &version) {
         std::getline(std::cin, command);
         Command *cmd = Command::get_cmd(command);
         if(!cmd) {
-            std::cout<<"Unknown command. Type 'help' to get a list of commands.\n";
+            std::cout<<"\nUnknown command. Type 'help' to get a list of commands.\n";
             continue;
         }
         Command::CmdStatusCode status_code = cmd->execute();
