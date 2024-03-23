@@ -9,3 +9,17 @@ user_id(user_id), username(std::move(username)), date_created(std::move(date_cre
 void User::retrieve_data() {
 
 }
+
+User::~User() {
+    this->username.clear();
+    this->date_created.clear();
+}
+
+User &User::operator=(const User &other) {
+    this->username = other.username;
+    this->date_created = other.date_created;
+    return *this;
+}
+
+User::User(const User &other) :
+user_id(other.user_id), username(other.username), date_created(other.date_created), data(other.data) {}

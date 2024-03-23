@@ -8,9 +8,13 @@
 class User {
 public:
     User(uint64_t user_id, std::string username, std::string date_created);
+    ~User();
+    User &operator=(const User &other);
+    User(const User &other);
     void retrieve_data();
 private:
-    const uint64_t user_id;
+    // TODO: make const
+    uint64_t user_id;
     std::string username;
     std::string date_created;
     UserData data;
