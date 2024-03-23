@@ -20,7 +20,6 @@ bool Program::user_logged_in() {
     return !(Program::logged_user == nullptr);
 }
 
-
 void Program::load_commands() {
     Command::add_cmd("quit", std::make_unique<CmdQuit>());
     Command::add_cmd("add user", std::make_unique<CmdAddUser>());

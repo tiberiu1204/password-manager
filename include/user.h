@@ -7,11 +7,12 @@
 
 class User {
 public:
-    User(uint64_t user_id, std::string username);
+    User(uint64_t user_id, std::string username, std::string date_created);
     void retrieve_data();
 private:
     const uint64_t user_id;
     std::string username;
+    std::string date_created;
     UserData data;
 };
 

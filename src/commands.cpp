@@ -205,7 +205,7 @@ Command::CmdStatusCode CmdLogin::execute() {
         std::string password_hash = Bcrypt().hash(password, Bcrypt::extract_salt(q_password_hash), BCRYPT_COST);
 
         if(q_username == username && q_password_hash == password_hash) {
-            User *user = new User(q_user_id, username);
+            User *user = new User(q_user_id, username, q_date_created);
             user->retrieve_data();
             Program::set_logged_user(user);
             return SC_SUCCESS;
