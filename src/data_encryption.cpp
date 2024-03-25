@@ -136,6 +136,11 @@ void AES256::add_round_key(uint8_t state[4][4], uint8_t round) {
     std::cout<<"Add round key\n";
     std::cout<<"Before\n";
     print_state(state);
+    std::cout<<"Key sch\n";
+    for(size_t i = 0; i < 4; i++) {
+        std::cout<<std::hex<<this->exp_key[round * 4 + i];
+    }
+    std::cout<<"\n";
     for(size_t i = 0; i < 4; i++) {
         for(size_t j = 0; j < 4; j++) {
             state[j][i] = state[j][i] ^ ((this->exp_key[round * 4 + i] >> (24 - 8 * j)) & 0xff);
