@@ -1,6 +1,7 @@
 #include "data_encryption.h"
+#include <iostream>
 
-uint8_t AES::xtime(uint8_t byte, uint8_t times = 1) {
+uint8_t AES256::xtime(uint8_t byte, uint8_t times = 1) {
     if(times == 0) return byte;
     while(times--) {
         byte = (byte << 1) & 0x100 ? (byte << 1) ^ 0x11b : byte << 1;
@@ -8,18 +9,18 @@ uint8_t AES::xtime(uint8_t byte, uint8_t times = 1) {
     return byte;
 }
 
-uint8_t AES::ffield_mult(uint8_t b1, uint8_t b2) {
+uint8_t AES256::ffield_mult(uint8_t b1, uint8_t b2) {
     if(b1 < b2) std::swap(b1, b2);
     uint8_t result = 0;
     size_t bit_index = 0;
     while(b2) {
-        result ^= AES::xtime(b1, bit_index++) * (b2 & 1);
+        result ^= AES256::xtime(b1, bit_index++) * (b2 & 1);
         b2 >>= 1;
     }
     return result;
 }
 
-uint32_t AES::word_prod(uint32_t w1, uint32_t w2) {
+uint32_t AES256::word_prod(uint32_t w1, uint32_t w2) {
     const uint8_t a3 = (w1 >> 24) & 0xff,
                   a2 = (w1 >> 16) & 0xff,
                   a1 = (w1 >> 8) & 0xff,
@@ -28,9 +29,137 @@ uint32_t AES::word_prod(uint32_t w1, uint32_t w2) {
                   b2 = (w2 >> 16) & 0xff,
                   b1 = (w2 >> 8) & 0xff,
                   b0 = w2 & 0xff,
-                  d0 = AES::ffield_mult(a0, b0) ^ AES::ffield_mult(a3, b1) ^ AES::ffield_mult(a2, b2) ^ AES::ffield_mult(a1, b3),
-                  d1 = AES::ffield_mult(a1, b0) ^ AES::ffield_mult(a0, b1) ^ AES::ffield_mult(a3, b2) ^ AES::ffield_mult(a2, b3),
-                  d2 = AES::ffield_mult(a2, b0) ^ AES::ffield_mult(a1, b1) ^ AES::ffield_mult(a0, b2) ^ AES::ffield_mult(a3, b3),
-                  d3 = AES::ffield_mult(a3, b0) ^ AES::ffield_mult(a2, b1) ^ AES::ffield_mult(a1, b2) ^ AES::ffield_mult(a0, b3);
+                  d0 = AES256::ffield_mult(a0, b0) ^ AES256::ffield_mult(a3, b1) ^ AES256::ffield_mult(a2, b2) ^ AES256::ffield_mult(a1, b3),
+                  d1 = AES256::ffield_mult(a1, b0) ^ AES256::ffield_mult(a0, b1) ^ AES256::ffield_mult(a3, b2) ^ AES256::ffield_mult(a2, b3),
+                  d2 = AES256::ffield_mult(a2, b0) ^ AES256::ffield_mult(a1, b1) ^ AES256::ffield_mult(a0, b2) ^ AES256::ffield_mult(a3, b3),
+                  d3 = AES256::ffield_mult(a3, b0) ^ AES256::ffield_mult(a2, b1) ^ AES256::ffield_mult(a1, b2) ^ AES256::ffield_mult(a0, b3);
     return (d3 << 24) + (d2 << 16) + (d1 << 8) + d0;
+}
+
+void print_state(uint8_t state[4][4]) {
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            std::cout<<std::hex<<static_cast<unsigned>(state[i][j])<<" ";
+        }
+        std::cout<<"\n";
+    }
+}
+
+void AES256::sub_bytes(uint8_t state[4][4]) {
+    std::cout<<"Sub bytes\n";
+    std::cout<<"Before\n";
+    print_state(state);
+    for(size_t i = 0; i < 4; i++) {
+        for(size_t j = 0; j < 4; j++) {
+            state[j][i] = this->S[state[j][i]];
+        }
+    }
+    std::cout<<"After\n";
+    print_state(state);
+}
+/*
+std::cout<<"Sub bytes\n";
+std::cout<<"Before\n";
+print_state(state);
+std::cout<<"After\n";
+print_state(state);
+*/
+
+void AES256::shift_rows(uint8_t state[4][4]) {
+    std::cout<<"Shift rows\n";
+    std::cout<<"Before\n";
+    print_state(state);
+    uint8_t temp_row[4];
+    for(size_t i = 1; i < 4; i++) {
+        for(size_t j = 0; j < 4; j++) {
+            temp_row[j] = state[i][(j + i) & 3];
+        }
+        for(size_t j = 0; j < 4; j++) {
+            state[i][j] = temp_row[j];
+        }
+    }
+    std::cout<<"After\n";
+    print_state(state);
+}
+
+// TODO: Delete debugging prints after implementation
+
+void AES256::mix_columns(uint8_t state[4][4]) {
+    std::cout<<"Mix columns\n";
+    std::cout<<"Before\n";
+    print_state(state);
+    for(size_t i = 0; i < 4; i++) {
+        uint32_t word = 0;
+        for(size_t j = 0; j < 4; j++) {
+            word <<= 8;
+            word += state[j][i];
+        }
+        word = AES256::word_prod(word, 0x03010102);
+        state[0][i] = word >> 24;
+        state[1][i] = (word >> 16) & 0xff;
+        state[2][i] = (word >> 8) & 0xff;
+        state[3][i] = word & 0xff;
+    }
+    std::cout<<"After\n";
+    print_state(state);
+}
+
+void AES256::add_round_key(uint8_t state[4][4], uint8_t round) {
+    std::cout<<"Add round key\n";
+    std::cout<<"Before\n";
+    print_state(state);
+    for(size_t i = 0; i < 4; i++) {
+        for(size_t j = 0; j < 4; j++) {
+            state[j][i] = state[j][i] ^ ((this->exp_key[round * 4 + i] >> (24 - 8 * j)) & 0xff);
+        }
+    }
+    std::cout<<"After\n";
+    print_state(state);
+}
+
+uint32_t AES256::sub_word(uint32_t word) {
+    uint8_t b0 = this->S[word >> 24],
+            b1 = this->S[(word >> 16) & 0xff],
+            b2 = this->S[(word >> 8) & 0xff],
+            b3 = this->S[word & 0xff];
+    return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
+}
+
+uint32_t AES256::rot_word(uint32_t word) {
+    uint8_t b0 = word >> 24,
+            b1 = (word >> 16) & 0xff,
+            b2 = (word >> 8) & 0xff,
+            b3 = word & 0xff;
+    return (b1 << 24) + (b2 << 16) + (b3 << 8) + b0;
+}
+
+void AES256::key_expansion() {
+    for(size_t i = 0; i < 8; i++) {
+        this->exp_key[i] = (this->key[i * 4] << 24) + (this->key[i * 4 + 1] << 16) +
+                           (this->key[i * 4 + 2] << 8) + (this->key[i * 4 + 3]);
+    }
+    uint32_t temp;
+    for(size_t i = 8; i < 60; i++) {
+        temp = this->exp_key[i - 1];
+        if(i % 8 == 0) {
+            temp = this->sub_word(AES256::rot_word(temp)) ^ this->rcon[i / 8];
+        }
+        else if(i % 8 == 4) {
+            temp = this->sub_word(temp);
+        }
+        this->exp_key[i] = this->exp_key[i - 8] ^ temp;
+    }
+}
+
+void AES256::cypher(uint8_t state[4][4]) {
+    this->add_round_key(state, 0);
+    for(uint8_t round = 1; round < 14; round++) {
+        this->sub_bytes(state);
+        AES256::shift_rows(state);
+        AES256::mix_columns(state);
+        this->add_round_key(state, round);
+    }
+    this->sub_bytes(state);
+    AES256::shift_rows(state);
+    this->add_round_key(state, 14);
 }
