@@ -12,5 +12,6 @@ int main() {
     for(auto &c : out) {
         std::cout<<std::hex<<static_cast<uint16_t>(c);
     }
+//    std::cout<<std::hex<<AES256::word_prod(0x6353e08c, 0x03010102);
     //return Program::start_program("dev");
 }
