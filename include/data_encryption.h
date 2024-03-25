@@ -6,8 +6,8 @@
 
 class AES256 {
 public:
-    std::string encrypt(const std::string &text, const std::string &key);
-    std::string decrypt(const std::string &text, const std::string &key);
+    std::string encrypt(const std::string &text, const std::string &password);
+    std::string decrypt(const std::string &text, const std::string &password);
     // TODO: Change in private after done implementing;
 public:
     uint8_t key[32];

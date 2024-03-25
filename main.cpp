@@ -2,6 +2,15 @@
 #include "data_encryption.h"
 #include <iostream>
 int main() {
-    //std::cout<<AES::word_prod(0x03010102, 0x0b0d090e);
-    return Program::start_program("dev");
+    std::string key;
+    std::string plaintext;
+    for(uint8_t i = 0; i < 16; i++) {
+        plaintext.push_back(static_cast<char>(i * 0x11));
+    }
+    for(char i = 0; i < 32; i++) key.push_back(i);
+    std::string out = AES256().encrypt(plaintext, key);
+    for(auto &c : out) {
+        std::cout<<std::hex<<static_cast<uint16_t>(c);
+    }
+    //return Program::start_program("dev");
 }

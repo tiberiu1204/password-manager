@@ -1,6 +1,35 @@
 #include "data_encryption.h"
 #include <iostream>
 
+std::string AES256::encrypt(const std::string &text, const std::string &password) {
+    // TODO: convert password to key
+    for(size_t i = 0; i < 32; i++) {
+        this->key[i] = static_cast<uint8_t>(password[i]);
+    }
+    this->key_expansion();
+    size_t index = 0;
+    std::string output;
+    uint8_t padding_val = text.size() % 16;
+    while(index < text.size()) {
+        size_t chr_ind = index;
+        index += 16;
+        uint8_t state[4][4];
+        for(; chr_ind < index; chr_ind++) {
+            if(chr_ind < text.size()) {
+                state[(chr_ind % 16) % 4][(chr_ind % 16) / 4] = text[chr_ind];
+            }
+            else {
+                state[(chr_ind % 16) % 4][(chr_ind % 16) / 4] = padding_val;
+            }
+        }
+        this->cypher(state);
+        for(size_t i = 0; i < 16; i++) {
+            output.push_back(static_cast<char>(state[i % 4][i / 4]));
+        }
+    }
+    return output;
+}
+
 uint8_t AES256::xtime(uint8_t byte, uint8_t times = 1) {
     if(times == 0) return byte;
     while(times--) {
