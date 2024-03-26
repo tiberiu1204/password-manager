@@ -9,8 +9,7 @@ class AES256 {
 public:
     std::vector<uint8_t> encrypt(const std::string &text, const std::string &password);
     std::string decrypt(const std::vector<uint8_t> &byte_arr, const std::string &password);
-    // TODO: Change in private after done implementing;
-public:
+private:
     uint8_t key[32];
     const uint8_t S[256] = {
             0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5,
