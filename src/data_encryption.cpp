@@ -10,7 +10,7 @@ std::vector<uint8_t> AES256::encrypt(const std::string &text, const std::string 
     this->key_expansion();
     size_t index = 0;
     std::vector<uint8_t> output;
-    uint8_t padding_val = text.size() % 16;
+    uint8_t padding_val = 0;
     while(index < text.size()) {
         size_t chr_ind = index;
         index += 16;
@@ -48,7 +48,7 @@ std::string AES256::decrypt(const std::vector<uint8_t> &byte_arr, const std::str
         this->inv_cypher(state);
         for(size_t i = 0; i < 16; i++) {
             char chr = static_cast<char>(state[i % 4][i / 4]);
-            if(chr > 15) {
+            if(chr) {
                 output.push_back(static_cast<char>(state[i % 4][i / 4]));
             }
         }
@@ -106,7 +106,7 @@ void AES256::sub_bytes(uint8_t state[4][4], bool inverse = false) {
     print_state(state);
     for(size_t i = 0; i < 4; i++) {
         for(size_t j = 0; j < 4; j++) {
-            state[j][i] = inverse ? this->inv_S[state[i][j]] : this->S[state[j][i]];
+            state[i][j] = inverse ? this->inv_S[state[i][j]] : this->S[state[i][j]];
         }
     }
     std::cout<<"After\n";
