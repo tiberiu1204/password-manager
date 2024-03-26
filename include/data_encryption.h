@@ -8,7 +8,7 @@
 class AES256 {
 public:
     std::vector<uint8_t> encrypt(const std::string &text, const std::string &password);
-    std::string decrypt(const std::string &text, const std::string &password);
+    std::string decrypt(const std::vector<uint8_t> &byte_arr, const std::string &password);
     // TODO: Change in private after done implementing;
 public:
     uint8_t key[32];
@@ -86,17 +86,15 @@ public:
     };
     uint32_t exp_key[60];
 
-    void sub_bytes(uint8_t[4][4]);
-    static void shift_rows(uint8_t[4][4]);
-    static void mix_columns(uint8_t[4][4]);
+    void sub_bytes(uint8_t[4][4], bool);
+    static void shift_rows(uint8_t[4][4], bool);
+    static void mix_columns(uint8_t[4][4], bool);
     void add_round_key(uint8_t[4][4], uint8_t);
     void cypher(uint8_t[4][4]);
     uint32_t sub_word(uint32_t);
     static uint32_t rot_word(uint32_t);
     void key_expansion();
-    void inv_mix_columns();
-    void inv_shift_rows();
-    void inv_sub_bytes();
+    void inv_cypher(uint8_t[4][4]);
     static uint8_t xtime(uint8_t, uint8_t);
     static uint8_t ffield_mult(uint8_t, uint8_t);
     static uint32_t word_prod(uint32_t, uint32_t);

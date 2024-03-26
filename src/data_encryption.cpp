@@ -17,7 +17,7 @@ std::vector<uint8_t> AES256::encrypt(const std::string &text, const std::string 
         uint8_t state[4][4];
         for(; chr_ind < index; chr_ind++) {
             if(chr_ind < text.size()) {
-                state[(chr_ind % 16) % 4][(chr_ind % 16) / 4] = text[chr_ind];
+                state[(chr_ind % 16) % 4][(chr_ind % 16) / 4] = text.at(chr_ind);
             }
             else {
                 state[(chr_ind % 16) % 4][(chr_ind % 16) / 4] = padding_val;
@@ -26,6 +26,31 @@ std::vector<uint8_t> AES256::encrypt(const std::string &text, const std::string 
         this->cypher(state);
         for(size_t i = 0; i < 16; i++) {
             output.push_back(state[i % 4][i / 4]);
+        }
+    }
+    return output;
+}
+
+std::string AES256::decrypt(const std::vector<uint8_t> &byte_arr, const std::string &password) {
+    std::string output;
+    for(int i = 0; i < 32; i++) {
+        this->key[i] = static_cast<uint8_t>(password[i]);
+    }
+    this->key_expansion();
+    size_t index = 0;
+    while(index < byte_arr.size()) {
+        size_t byte_ind = index;
+        index += 16;
+        uint8_t state[4][4];
+        for(; byte_ind < index; byte_ind++) {
+            state[(byte_ind % 16) % 4][(byte_ind % 16) / 4] = byte_arr.at(byte_ind);
+        }
+        this->inv_cypher(state);
+        for(size_t i = 0; i < 16; i++) {
+            char chr = static_cast<char>(state[i % 4][i / 4]);
+            if(chr > 15) {
+                output.push_back(static_cast<char>(state[i % 4][i / 4]));
+            }
         }
     }
     return output;
@@ -75,13 +100,13 @@ void print_state(uint8_t state[4][4]) {
     std::cout<<"\n";
 }
 
-void AES256::sub_bytes(uint8_t state[4][4]) {
+void AES256::sub_bytes(uint8_t state[4][4], bool inverse = false) {
     std::cout<<"Sub bytes\n";
     std::cout<<"Before\n";
     print_state(state);
     for(size_t i = 0; i < 4; i++) {
         for(size_t j = 0; j < 4; j++) {
-            state[j][i] = this->S[state[j][i]];
+            state[j][i] = inverse ? this->inv_S[state[i][j]] : this->S[state[j][i]];
         }
     }
     std::cout<<"After\n";
@@ -95,14 +120,19 @@ std::cout<<"After\n";
 print_state(state);
 */
 
-void AES256::shift_rows(uint8_t state[4][4]) {
+void AES256::shift_rows(uint8_t state[4][4], bool inverse = false) {
     std::cout<<"Shift rows\n";
     std::cout<<"Before\n";
     print_state(state);
     uint8_t temp_row[4];
     for(size_t i = 1; i < 4; i++) {
         for(size_t j = 0; j < 4; j++) {
-            temp_row[j] = state[i][(j + i) & 3];
+            if(inverse) {
+                temp_row[(j + i) & 3] = state[i][j];
+            }
+            else {
+                temp_row[j] = state[i][(j + i) & 3];
+            }
         }
         for(size_t j = 0; j < 4; j++) {
             state[i][j] = temp_row[j];
@@ -114,7 +144,7 @@ void AES256::shift_rows(uint8_t state[4][4]) {
 
 // TODO: Delete debugging prints after implementation
 
-void AES256::mix_columns(uint8_t state[4][4]) {
+void AES256::mix_columns(uint8_t state[4][4], bool inverse = false) {
     std::cout<<"Mix columns\n";
     std::cout<<"Before\n";
     print_state(state);
@@ -123,7 +153,9 @@ void AES256::mix_columns(uint8_t state[4][4]) {
         for(size_t j = 0; j < 4; j++) {
             word = word + (state[j][i] << (8 * j));
         }
-        word = AES256::word_prod(word, 0x03010102);
+        word = inverse ?
+                AES256::word_prod(word, 0x0b0d090e) :
+                AES256::word_prod(word, 0x03010102);
         state[3][i] = word >> 24;
         state[2][i] = (word >> 16) & 0xff;
         state[1][i] = (word >> 8) & 0xff;
@@ -197,3 +229,17 @@ void AES256::cypher(uint8_t state[4][4]) {
     AES256::shift_rows(state);
     this->add_round_key(state, 14);
 }
+
+void AES256::inv_cypher(uint8_t state[4][4]) {
+    this->add_round_key(state, 14);
+    for(size_t round = 13; round > 0; round--) {
+        AES256::shift_rows(state, true);
+        this->sub_bytes(state, true);
+        this->add_round_key(state, round);
+        AES256::mix_columns(state, true);
+    }
+    AES256::shift_rows(state, true);
+    this->sub_bytes(state, true);
+    this->add_round_key(state, 0);
+}
+
