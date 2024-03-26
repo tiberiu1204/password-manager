@@ -3,10 +3,11 @@
 
 #include <string>
 #include <cstdint>
+#include <vector>
 
 class AES256 {
 public:
-    std::string encrypt(const std::string &text, const std::string &password);
+    std::vector<uint8_t> encrypt(const std::string &text, const std::string &password);
     std::string decrypt(const std::string &text, const std::string &password);
     // TODO: Change in private after done implementing;
 public:
@@ -79,7 +80,10 @@ public:
             0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26,
             0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
     };
-    const uint8_t rcon[7] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40 };
+    const uint32_t rcon[8] = {
+            0, 0x1000000, 0x2000000, 0x4000000,
+            0x8000000, 0x10000000, 0x20000000, 0x40000000,
+    };
     uint32_t exp_key[60];
 
     void sub_bytes(uint8_t[4][4]);

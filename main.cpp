@@ -7,8 +7,11 @@ int main() {
     for(uint8_t i = 0; i < 16; i++) {
         plaintext.push_back(static_cast<char>(i * 0x11));
     }
+    for(uint8_t i = 0; i < 12; i++) {
+        plaintext.push_back(static_cast<char>(i * 0x11));
+    }
     for(char i = 0; i < 32; i++) key.push_back(i);
-    std::string out = AES256().encrypt(plaintext, key);
+    std::vector<uint8_t> out = AES256().encrypt(plaintext, key);
     for(auto &c : out) {
         std::cout<<std::hex<<static_cast<uint16_t>(c);
     }

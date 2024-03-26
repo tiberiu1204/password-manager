@@ -1,14 +1,15 @@
 #include "data_encryption.h"
 #include <iostream>
+#include <iomanip>
 
-std::string AES256::encrypt(const std::string &text, const std::string &password) {
+std::vector<uint8_t> AES256::encrypt(const std::string &text, const std::string &password) {
     // TODO: convert password to key
     for(size_t i = 0; i < 32; i++) {
         this->key[i] = static_cast<uint8_t>(password[i]);
     }
     this->key_expansion();
     size_t index = 0;
-    std::string output;
+    std::vector<uint8_t> output;
     uint8_t padding_val = text.size() % 16;
     while(index < text.size()) {
         size_t chr_ind = index;
@@ -24,7 +25,7 @@ std::string AES256::encrypt(const std::string &text, const std::string &password
         }
         this->cypher(state);
         for(size_t i = 0; i < 16; i++) {
-            output.push_back(static_cast<char>(state[i % 4][i / 4]));
+            output.push_back(state[i % 4][i / 4]);
         }
     }
     return output;
@@ -68,7 +69,7 @@ uint32_t AES256::word_prod(uint32_t w1, uint32_t w2) {
 void print_state(uint8_t state[4][4]) {
     for(int i = 0; i < 4; i++) {
         for(int j = 0; j < 4; j++) {
-            std::cout<<std::hex<<static_cast<unsigned>(state[j][i]);
+            std::cout<<std::setfill('0')<<std::setw(2)<<std::hex<<static_cast<unsigned>(state[j][i]);
         }
     }
     std::cout<<"\n";
