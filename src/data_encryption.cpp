@@ -237,7 +237,7 @@ void AES256::inv_cypher(uint8_t state[4][4]) {
     this->add_round_key(state, 0);
 }
 
-std::vector<uint64_t> SHA512::hash(const std::string &message) {
+std::vector<uint8_t> SHA512::hash(const std::string &message) {
     std::string padded_mdg = SHA512::pad_message(message);
     std::vector<SHA512::Block> parsed_msg = SHA512::parse_message(padded_mdg);
     std::vector<uint64_t> curr_hash = SHA512::get_initial_hash();
@@ -247,7 +247,7 @@ std::vector<uint64_t> SHA512::hash(const std::string &message) {
         for(size_t i = 0; i < 80; i++) {
             if(i < 16) {
                 msg_sch[i] = block.at(i);
-                std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<block.at(i)<<"\n";
+//                std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<block.at(i)<<"\n";
             }
             else {
                 msg_sch[i] = SHA512::sig1(msg_sch[i - 2]) + msg_sch[i - 7] +
@@ -259,7 +259,6 @@ std::vector<uint64_t> SHA512::hash(const std::string &message) {
         for(size_t i = 0; i < 80; i++) {
             uint64_t word1 = h + SHA512::bigsig1(e) + SHA512::ch(e, f, g) + this->K[i] + msg_sch[i],
                      word2 = SHA512::bigsig0(a) + SHA512::maj(a, b, c);
-            std::cout<<h<<" "<<SHA512::bigsig1(e)<<" "<<SHA512::ch(e, f, g)<<" "<<this->K[i]<<" "<<msg_sch[i]<<"\n";
             h = g;
             g = f;
             f = e;
@@ -268,7 +267,7 @@ std::vector<uint64_t> SHA512::hash(const std::string &message) {
             c = b;
             b = a;
             a = word1 + word2;
-            std::cout<<"t = "<<i<<"\n";
+//            std::cout<<"t = "<<i<<"\n";
 //            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<a<<" ";
 //            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<b<<" ";
 //            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<c<<" ";
@@ -288,7 +287,13 @@ std::vector<uint64_t> SHA512::hash(const std::string &message) {
         curr_hash[6] = g + curr_hash[6];
         curr_hash[7] = h + curr_hash[7];
     }
-    return curr_hash;
+    std::vector<uint8_t> final_hash;
+    for(size_t i = 0; i < 8; i++) {
+        for(size_t j = 8; j > 0; j--) {
+            final_hash.push_back((curr_hash[i] >> (8 * j - 8)) & 0xff);
+        }
+    }
+    return final_hash;
 }
 
 uint64_t SHA512::rotr(uint64_t x, int32_t n) {
@@ -362,4 +367,62 @@ std::vector<uint64_t> SHA512::get_initial_hash() {
             0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
             0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179
     };
+}
+
+constexpr uint32_t SHA512::get_input_block_size() const {
+    return 128;
+}
+
+constexpr uint32_t SHA512::get_output_block_size() const {
+    return 64;
+}
+
+std::vector<uint8_t> HMAC::apply_hmac(const std::string &text, const std::string &key, std::unique_ptr<SHA> sha) {
+    uint32_t B = sha->get_input_block_size();
+    uint32_t L = sha->get_output_block_size();
+    std::vector<uint8_t> key0;
+    if(key.size() == B) {
+        key0.insert(key0.end(), key.begin(), key.end());
+    }
+    else if(key.size() > B) {
+        key0 = sha->hash(key);
+        for(size_t i = 0; i < B - L; i++) key0.push_back(0);
+    }
+    else {
+        key0.insert(key0.end(), key.begin(), key.end());
+        for(size_t i = 0; i < B - key.size(); i++) {
+            key0.push_back(0);
+        }
+    }
+
+    assert(key0.size() == B);
+
+    std::vector<uint8_t> temp = key0;
+    for(size_t i = 0; i < B; i++) {
+        temp[i] ^= 0x36;
+    }
+
+    std::vector<uint8_t> result = temp;
+    result.insert(result.end(), text.begin(), text.end());
+    std::string result_str;
+    result_str.insert(result_str.end(), result.begin(), result.end());
+
+    assert(result.size() == text.size() + temp.size());
+
+    result = sha->hash(result_str);
+
+    assert(result.size() == L);
+
+    for(size_t i = 0; i < B; i++) {
+        key0[i] ^= 0x5c;
+    }
+
+    key0.insert(key0.end(), result.begin(), result.end());
+    result_str.clear();
+    result_str.insert(result_str.end(), key0.begin(), key0.end());
+    result = sha->hash(result_str);
+
+    assert(result.size() == L);
+
+    return result;
 }

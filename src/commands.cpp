@@ -202,7 +202,8 @@ Command::CmdStatusCode CmdLogin::execute() {
         std::string q_password_hash = query.getColumn(2);
         std::string q_date_created = query.getColumn(3);
 
-        std::string password_hash = Bcrypt().hash(password, Bcrypt::extract_salt(q_password_hash), BCRYPT_COST);
+        std::string password_hash = Bcrypt().hash(password, Bcrypt::extract_salt(q_password_hash),
+                                                  Bcrypt::extract_cost(q_password_hash));
 
         if(q_username == username && q_password_hash == password_hash) {
             User *user = new User(q_user_id, username, q_date_created);

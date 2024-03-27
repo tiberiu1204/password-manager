@@ -21,10 +21,18 @@ int main() {
 //    }
 //    std::cout<<"\n"<<out2;
     //    std::cout<<std::hex<<AES256::word_prod(0x6353e08c, 0x03010102);
-    std::vector<uint64_t> hash = SHA512().hash("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmn"
-                                               "hijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
-    for(auto &a : hash) {
-        std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<a;
+//    std::string str;
+//    for(int i = 0; i < 1000000; i++) {
+//        str.push_back('a');
+//    }
+//    std::vector<uint8_t> hash = SHA512().hash(str);
+//    for(auto &a : hash) {
+//        std::cout<<std::setfill('0')<<std::setw(2)<<std::hex<<static_cast<uint16_t>(a);
+//    }
+//    std::cout<<"\n";
+    std::vector<uint8_t> v = HMAC::apply_hmac("alabalaportocala", "asdfasdfasdf", std::make_unique<SHA512>());
+    for(const auto &ch : v) {
+        std::cout<<std::setfill('0')<<std::setw(2)<<std::hex<<static_cast<uint16_t>(ch);
     }
     std::cout<<"\n";
     return Program::start_program("dev");

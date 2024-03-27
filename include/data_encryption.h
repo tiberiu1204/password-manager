@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 class AES256 {
 public:
@@ -99,9 +100,20 @@ private:
     static uint32_t word_prod(uint32_t, uint32_t);
 };
 
-class SHA512 {
+class SHA {
 public:
-    std::vector<uint64_t> hash(const std::string &message);
+    virtual std::vector<uint8_t> hash(const std::string &message) = 0;
+    [[nodiscard]] virtual constexpr uint32_t get_input_block_size() const = 0; // In bytes
+    [[nodiscard]] virtual constexpr uint32_t get_output_block_size() const = 0; // In bytes
+    virtual ~SHA() = default;
+};
+
+class SHA512 : public SHA {
+public:
+    SHA512() = default;
+    std::vector<uint8_t> hash(const std::string &message) override;
+    [[nodiscard]] constexpr uint32_t get_input_block_size() const override;
+    [[nodiscard]] constexpr uint32_t get_output_block_size() const override;
 
 private:
     const uint64_t K[80] = {
@@ -138,6 +150,11 @@ private:
     static std::string pad_message(const std::string &);
     static std::vector<Block> parse_message(const std::string &);
     static std::vector<uint64_t> get_initial_hash();
+};
+
+class HMAC {
+public:
+    static std::vector<uint8_t> apply_hmac(const std::string &text, const std::string &key, std::unique_ptr<SHA> sha);
 };
 
 #endif //PASSWORD_MANAGER_DATA_ENCRYPTION_H
