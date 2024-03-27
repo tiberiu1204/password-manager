@@ -4,11 +4,26 @@
 #include "SQLiteCpp.h"
 #include "commands.h"
 
-constexpr const char* INIT_DB_QUERY = "create table users "
-                                      "(user_id integer not null primary key autoincrement,"
+constexpr const char* INIT_USERS_TABLE = "create table if not exists users "
+                                      "("
+                                      "user_id integer not null primary key autoincrement,"
                                       "username varchar(64),"
                                       "password_hash varchar(64),"
-                                      "date_created date);";
+                                      "date_created date"
+                                      ");";
+
+constexpr const char* INIT_USER_DATA_TABLE = "create table if not exists user_data "
+                                             "("
+                                             "user_id integer not null,"
+                                             "app_name varchar(128),"
+                                             "website_link varchar(256),"
+                                             "username varchar(128),"
+                                             "password varchar(128),"
+                                             "notes varchar(2048),"
+                                             "primary key (user_id autoincrement),"
+                                             "foreign key (user_id) references users(user_id) on delete cascade"
+                                             ");";
+
 
 std::unique_ptr<User> Program::logged_user = nullptr;
 
@@ -32,15 +47,14 @@ void Program::init_db() {
     namespace fs = std::filesystem;
     SQLite::Database db((fs::current_path() /= DATA_DIR) /= USERS_DB_FILE_NAME,
                         SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
-    db.exec(INIT_DB_QUERY);
+    db.exec("PRAGMA foreign_keys = ON;");
+    db.exec(INIT_USERS_TABLE);
+    db.exec(INIT_USER_DATA_TABLE);
 }
 
 void Program::init_files() {
     namespace fs = std::filesystem;
-    fs::create_directory(fs::current_path() /= DATA_DIR);
-    if (!(fs::exists((fs::current_path() /= DATA_DIR) /= USERS_DB_FILE_NAME))) {
-        Program::init_db();
-    }
+    Program::init_db();
 }
 
 int Program::start_program(const std::string &version) {
