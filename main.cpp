@@ -1,6 +1,7 @@
 #include "program.h"
 #include "data_encryption.h"
 #include <iostream>
+#include <iomanip>
 int main() {
 //    std::string key;
 //    std::string plaintext;
@@ -20,5 +21,11 @@ int main() {
 //    }
 //    std::cout<<"\n"<<out2;
     //    std::cout<<std::hex<<AES256::word_prod(0x6353e08c, 0x03010102);
+    std::vector<uint64_t> hash = SHA512().hash("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmn"
+                                               "hijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
+    for(auto &a : hash) {
+        std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<a;
+    }
+    std::cout<<"\n";
     return Program::start_program("dev");
 }

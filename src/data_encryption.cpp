@@ -1,6 +1,7 @@
 #include "data_encryption.h"
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 
 std::vector<uint8_t> AES256::encrypt(const std::string &text, const std::string &password) {
     // TODO: convert password to key
@@ -112,13 +113,6 @@ void AES256::sub_bytes(uint8_t state[4][4], bool inverse = false) {
     std::cout<<"After\n";
     print_state(state);
 }
-/*
-std::cout<<"Sub bytes\n";
-std::cout<<"Before\n";
-print_state(state);
-std::cout<<"After\n";
-print_state(state);
-*/
 
 void AES256::shift_rows(uint8_t state[4][4], bool inverse = false) {
     std::cout<<"Shift rows\n";
@@ -243,3 +237,129 @@ void AES256::inv_cypher(uint8_t state[4][4]) {
     this->add_round_key(state, 0);
 }
 
+std::vector<uint64_t> SHA512::hash(const std::string &message) {
+    std::string padded_mdg = SHA512::pad_message(message);
+    std::vector<SHA512::Block> parsed_msg = SHA512::parse_message(padded_mdg);
+    std::vector<uint64_t> curr_hash = SHA512::get_initial_hash();
+
+    for(SHA512::Block block : parsed_msg) {
+        uint64_t msg_sch[80];
+        for(size_t i = 0; i < 80; i++) {
+            if(i < 16) {
+                msg_sch[i] = block.at(i);
+                std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<block.at(i)<<"\n";
+            }
+            else {
+                msg_sch[i] = SHA512::sig1(msg_sch[i - 2]) + msg_sch[i - 7] +
+                             SHA512::sig0(msg_sch[i - 15]) + msg_sch[i - 16];
+            }
+        }
+        uint64_t a = curr_hash[0], b = curr_hash[1], c = curr_hash[2], d = curr_hash[3], e = curr_hash[4],
+                 f = curr_hash[5], g = curr_hash[6], h = curr_hash[7];
+        for(size_t i = 0; i < 80; i++) {
+            uint64_t word1 = h + SHA512::bigsig1(e) + SHA512::ch(e, f, g) + this->K[i] + msg_sch[i],
+                     word2 = SHA512::bigsig0(a) + SHA512::maj(a, b, c);
+            std::cout<<h<<" "<<SHA512::bigsig1(e)<<" "<<SHA512::ch(e, f, g)<<" "<<this->K[i]<<" "<<msg_sch[i]<<"\n";
+            h = g;
+            g = f;
+            f = e;
+            e = d + word1;
+            d = c;
+            c = b;
+            b = a;
+            a = word1 + word2;
+            std::cout<<"t = "<<i<<"\n";
+//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<a<<" ";
+//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<b<<" ";
+//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<c<<" ";
+//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<d<<"\n";
+//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<e<<" ";
+//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<f<<" ";
+//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<g<<" ";
+//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<h<<"\n";
+
+        }
+        curr_hash[0] = a + curr_hash[0];
+        curr_hash[1] = b + curr_hash[1];
+        curr_hash[2] = c + curr_hash[2];
+        curr_hash[3] = d + curr_hash[3];
+        curr_hash[4] = e + curr_hash[4];
+        curr_hash[5] = f + curr_hash[5];
+        curr_hash[6] = g + curr_hash[6];
+        curr_hash[7] = h + curr_hash[7];
+    }
+    return curr_hash;
+}
+
+uint64_t SHA512::rotr(uint64_t x, int32_t n) {
+    return (x >> n) | (x << (64 - n));
+}
+
+uint64_t SHA512::ch(uint64_t x, uint64_t y, uint64_t z) {
+    return (x & y) ^ ((~x) & z);
+}
+
+uint64_t SHA512::maj(uint64_t x, uint64_t y, uint64_t z) {
+    return (x & y) ^ (x & z) ^ (y & z);
+}
+
+uint64_t SHA512::bigsig0(uint64_t x) {
+    return SHA512::rotr(x, 28) ^ SHA512::rotr(x, 34) ^ SHA512::rotr(x, 39);
+}
+
+uint64_t SHA512::bigsig1(uint64_t x) {
+    return SHA512::rotr(x, 14) ^ SHA512::rotr(x, 18) ^ SHA512::rotr(x, 41);
+}
+
+uint64_t SHA512::sig0(uint64_t x) {
+    return SHA512::rotr(x, 1) ^ SHA512::rotr(x, 8) ^ (x >> 7);
+}
+
+uint64_t SHA512::sig1(uint64_t x) {
+    return SHA512::rotr(x, 19) ^ SHA512::rotr(x, 61) ^ (x >> 6);
+}
+
+std::string SHA512::pad_message(const std::string &message) {
+    std::string padded_msg = message;
+    uint64_t msg_len = padded_msg.size();
+    int64_t k = (895 - static_cast<int64_t>(msg_len) * 8) % 1024;
+    k = k < 0 ? k + 1024 : k;
+    if(k > 0) padded_msg.push_back(static_cast<char>(0x80));
+    for(size_t i = 0; i < k / 8; i++) {
+        padded_msg.push_back(0);
+    }
+    for(size_t i = 0; i < 16; i++) {
+        if(i < 9) padded_msg.push_back(0);
+        else padded_msg.push_back(static_cast<char>(((msg_len * 8) >> (120 - 8 * i)) & 0xff));
+    }
+    assert(padded_msg.size() * 8 % 1024 == 0);
+    return padded_msg;
+}
+
+std::vector<SHA512::Block> SHA512::parse_message(const std::string &message) {
+    std::vector<Block> block_arr;
+    uint64_t word = 0;
+    Block block;
+    for(size_t i = 0; i < message.size(); i++) {
+        word <<= 8;
+        word += static_cast<uint8_t>(message[i]);
+        if((i + 1) % 8 == 0) {
+            block.push_back(word);
+            word = 0;
+        }
+        if((i + 1) % 128 == 0) {
+            block_arr.push_back(block);
+            assert(block.size() == 16);
+            block.clear();
+        }
+    }
+    assert(block_arr.size() == message.size() * 8 / 1024);
+    return block_arr;
+}
+
+std::vector<uint64_t> SHA512::get_initial_hash() {
+    return {
+            0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
+            0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179
+    };
+}
