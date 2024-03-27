@@ -2,6 +2,8 @@
 #include "data_encryption.h"
 #include <iostream>
 #include <iomanip>
+#include "bcrypt.h"
+
 int main() {
 //    std::string key;
 //    std::string plaintext;
@@ -30,10 +32,15 @@ int main() {
 //        std::cout<<std::setfill('0')<<std::setw(2)<<std::hex<<static_cast<uint16_t>(a);
 //    }
 //    std::cout<<"\n";
-    std::vector<uint8_t> v = HMAC::apply_hmac("alabalaportocala", "asdfasdfasdf", std::make_unique<SHA512>());
-    for(const auto &ch : v) {
-        std::cout<<std::setfill('0')<<std::setw(2)<<std::hex<<static_cast<uint16_t>(ch);
-    }
-    std::cout<<"\n";
+//    std::vector<uint8_t> v = HMAC::apply_hmac("alabalaportocala", "asdfasdfasdf", std::make_unique<SHA512>());
+//    for(const auto &ch : v) {
+//        std::cout<<std::setfill('0')<<std::setw(2)<<std::hex<<static_cast<uint16_t>(ch);
+//    }
+////    std::cout<<"\n";
+//    std::vector<uint8_t> v = PBKDF2::derive_key("parola123", Bcrypt::generate_salt(), 20000);
+//    for(const auto &a : v) {
+//        std::cout<<std::setfill('0')<<std::setw(2)<<std::hex<<static_cast<uint16_t>(a);
+//    }
+//    std::cout<<"\n"<<std::dec<<v.size()<<"\n";
     return Program::start_program("dev");
 }

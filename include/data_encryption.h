@@ -154,7 +154,7 @@ private:
 
 class HMAC {
 public:
-    static std::vector<uint8_t> apply_hmac(const std::string &text, const std::string &key, std::unique_ptr<SHA> sha);
+    static std::vector<uint8_t> apply_hmac(const std::string &text, const std::vector<uint8_t> &key, std::unique_ptr<SHA> sha);
 };
 
 class PBKDF2 {

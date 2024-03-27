@@ -327,7 +327,7 @@ constexpr uint32_t SHA512::get_output_block_size() const {
     return 64;
 }
 
-std::vector<uint8_t> HMAC::apply_hmac(const std::string &text, const std::string &key, std::unique_ptr<SHA> sha) {
+std::vector<uint8_t> HMAC::apply_hmac(const std::string &text, const std::vector<uint8_t> &key, std::unique_ptr<SHA> sha) {
     uint32_t B = sha->get_input_block_size();
     uint32_t L = sha->get_output_block_size();
     std::vector<uint8_t> key0;
@@ -335,7 +335,9 @@ std::vector<uint8_t> HMAC::apply_hmac(const std::string &text, const std::string
         key0.insert(key0.end(), key.begin(), key.end());
     }
     else if(key.size() > B) {
-        key0 = sha->hash(key);
+        std::string str_key;
+        str_key.insert(str_key.begin(), key.begin(), key.end());
+        key0 = sha->hash(str_key);
         for(size_t i = 0; i < B - L; i++) key0.push_back(0);
     }
     else {
@@ -383,14 +385,29 @@ std::vector<uint8_t> PBKDF2::derive_key(const std::string &password, const std::
     constexpr const uint64_t k_len = 256;
 
     uint64_t len = (k_len - 1) / h_len + 1;
-    uint64_t r = k_len - (len - 1) * h_len;
+    uint64_t remainder = k_len - (len - 1) * h_len;
 
-    std::vector<uint64_t> T(len, 0);
-    std::vector<uint8_t> U;
+    std::vector<std::vector<uint8_t>> T(len, std::vector<uint8_t>());
 
-    for(size_t i = 0; i < len; i++) {
-        if(!U.empty()) U.clear();
+    for(size_t i = 1; i <= len; i++) {
+        std::vector<uint8_t> U;
         U.insert(U.begin(), salt.begin(), salt.end());
-
+        U.push_back(i >> 24);
+        U.push_back((i >> 16) & 0xff);
+        U.push_back((i >> 8) & 0xff);
+        U.push_back(i & 0xff);
+        T[i - 1].resize(h_len / 8, 0);
+        for(size_t j = 0; j < iterations; j++) {
+            U = HMAC::apply_hmac(password, U, std::make_unique<SHA512>());
+            for(size_t k = 0; k < U.size(); k++) {
+                T[i - 1][k] ^= U[k];
+            }
+        }
     }
+    (T.end() - 1)->resize(remainder / 8);
+    std::vector<uint8_t> result;
+    for(const auto &arr : T) {
+        result.insert(result.end(), arr.begin(), arr.end());
+    }
+    return result;
 }
