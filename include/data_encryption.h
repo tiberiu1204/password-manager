@@ -8,8 +8,8 @@
 
 class AES256 {
 public:
-    std::vector<uint8_t> encrypt(const std::string &text, const std::string &password);
-    std::string decrypt(const std::vector<uint8_t> &byte_arr, const std::string &password);
+    std::vector<uint8_t> encrypt(const std::string &text, const std::vector<uint8_t> &master_key);
+    std::string decrypt(const std::vector<uint8_t> &byte_arr, const std::vector<uint8_t> &master_key);
 private:
     uint8_t key[32]{};
     const uint8_t S[256] = {
@@ -155,6 +155,11 @@ private:
 class HMAC {
 public:
     static std::vector<uint8_t> apply_hmac(const std::string &text, const std::string &key, std::unique_ptr<SHA> sha);
+};
+
+class PBKDF2 {
+public:
+    static std::vector<uint8_t> derive_key(const std::string &password, const std::string &salt, uint32_t iterations);
 };
 
 #endif //PASSWORD_MANAGER_DATA_ENCRYPTION_H

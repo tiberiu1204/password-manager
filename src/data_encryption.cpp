@@ -1,12 +1,9 @@
 #include "data_encryption.h"
-#include <iostream>
-#include <iomanip>
 #include <cassert>
 
-std::vector<uint8_t> AES256::encrypt(const std::string &text, const std::string &password) {
-    // TODO: convert password to key
+std::vector<uint8_t> AES256::encrypt(const std::string &text, const std::vector<uint8_t> &master_key) {
     for(size_t i = 0; i < 32; i++) {
-        this->key[i] = static_cast<uint8_t>(password[i]);
+        this->key[i] = master_key[i];
     }
     this->key_expansion();
     size_t index = 0;
@@ -32,10 +29,10 @@ std::vector<uint8_t> AES256::encrypt(const std::string &text, const std::string 
     return output;
 }
 
-std::string AES256::decrypt(const std::vector<uint8_t> &byte_arr, const std::string &password) {
+std::string AES256::decrypt(const std::vector<uint8_t> &byte_arr, const std::vector<uint8_t> &master_key) {
     std::string output;
     for(int i = 0; i < 32; i++) {
-        this->key[i] = static_cast<uint8_t>(password[i]);
+        this->key[i] = static_cast<uint8_t>(master_key[i]);
     }
     this->key_expansion();
     size_t index = 0;
@@ -92,32 +89,15 @@ uint32_t AES256::word_prod(uint32_t w1, uint32_t w2) {
     return (d0 << 24) + (d1 << 16) + (d2 << 8) + d3;
 }
 
-void print_state(uint8_t state[4][4]) {
-    for(int i = 0; i < 4; i++) {
-        for(int j = 0; j < 4; j++) {
-            std::cout<<std::setfill('0')<<std::setw(2)<<std::hex<<static_cast<unsigned>(state[j][i]);
-        }
-    }
-    std::cout<<"\n";
-}
-
 void AES256::sub_bytes(uint8_t state[4][4], bool inverse = false) {
-    std::cout<<"Sub bytes\n";
-    std::cout<<"Before\n";
-    print_state(state);
     for(size_t i = 0; i < 4; i++) {
         for(size_t j = 0; j < 4; j++) {
             state[i][j] = inverse ? this->inv_S[state[i][j]] : this->S[state[i][j]];
         }
     }
-    std::cout<<"After\n";
-    print_state(state);
 }
 
 void AES256::shift_rows(uint8_t state[4][4], bool inverse = false) {
-    std::cout<<"Shift rows\n";
-    std::cout<<"Before\n";
-    print_state(state);
     uint8_t temp_row[4];
     for(size_t i = 1; i < 4; i++) {
         for(size_t j = 0; j < 4; j++) {
@@ -132,16 +112,9 @@ void AES256::shift_rows(uint8_t state[4][4], bool inverse = false) {
             state[i][j] = temp_row[j];
         }
     }
-    std::cout<<"After\n";
-    print_state(state);
 }
 
-// TODO: Delete debugging prints after implementation
-
 void AES256::mix_columns(uint8_t state[4][4], bool inverse = false) {
-    std::cout<<"Mix columns\n";
-    std::cout<<"Before\n";
-    print_state(state);
     for(size_t i = 0; i < 4; i++) {
         uint32_t word = 0;
         for(size_t j = 0; j < 4; j++) {
@@ -155,26 +128,14 @@ void AES256::mix_columns(uint8_t state[4][4], bool inverse = false) {
         state[1][i] = (word >> 8) & 0xff;
         state[0][i] = word & 0xff;
     }
-    std::cout<<"After\n";
-    print_state(state);
 }
 
 void AES256::add_round_key(uint8_t state[4][4], uint8_t round) {
-    std::cout<<"Add round key\n";
-    std::cout<<"Before\n";
-    print_state(state);
-    std::cout<<"Key sch\n";
-    for(size_t i = 0; i < 4; i++) {
-        std::cout<<std::hex<<this->exp_key[round * 4 + i];
-    }
-    std::cout<<"\n";
     for(size_t i = 0; i < 4; i++) {
         for(size_t j = 0; j < 4; j++) {
             state[j][i] = state[j][i] ^ ((this->exp_key[round * 4 + i] >> (24 - 8 * j)) & 0xff);
         }
     }
-    std::cout<<"After\n";
-    print_state(state);
 }
 
 uint32_t AES256::sub_word(uint32_t word) {
@@ -247,7 +208,6 @@ std::vector<uint8_t> SHA512::hash(const std::string &message) {
         for(size_t i = 0; i < 80; i++) {
             if(i < 16) {
                 msg_sch[i] = block.at(i);
-//                std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<block.at(i)<<"\n";
             }
             else {
                 msg_sch[i] = SHA512::sig1(msg_sch[i - 2]) + msg_sch[i - 7] +
@@ -267,16 +227,6 @@ std::vector<uint8_t> SHA512::hash(const std::string &message) {
             c = b;
             b = a;
             a = word1 + word2;
-//            std::cout<<"t = "<<i<<"\n";
-//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<a<<" ";
-//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<b<<" ";
-//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<c<<" ";
-//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<d<<"\n";
-//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<e<<" ";
-//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<f<<" ";
-//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<g<<" ";
-//            std::cout<<std::setfill('0')<<std::setw(16)<<std::hex<<h<<"\n";
-
         }
         curr_hash[0] = a + curr_hash[0];
         curr_hash[1] = b + curr_hash[1];
@@ -425,4 +375,22 @@ std::vector<uint8_t> HMAC::apply_hmac(const std::string &text, const std::string
     assert(result.size() == L);
 
     return result;
+}
+
+std::vector<uint8_t> PBKDF2::derive_key(const std::string &password, const std::string &salt, const uint32_t iterations) {
+    // TODO: Maybe handle errors better
+    constexpr const uint64_t h_len = 512;
+    constexpr const uint64_t k_len = 256;
+
+    uint64_t len = (k_len - 1) / h_len + 1;
+    uint64_t r = k_len - (len - 1) * h_len;
+
+    std::vector<uint64_t> T(len, 0);
+    std::vector<uint8_t> U;
+
+    for(size_t i = 0; i < len; i++) {
+        if(!U.empty()) U.clear();
+        U.insert(U.begin(), salt.begin(), salt.end());
+
+    }
 }
